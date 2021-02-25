@@ -1,4 +1,5 @@
-/* Version: 1.0.0 */
+/* Version: 1.0.5 */
+var cacheId = "on9";
 self.addEventListener('install', function(e) {
   console.log('install');
 
@@ -6,11 +7,12 @@ self.addEventListener('install', function(e) {
   // cached all of our files
   e.waitUntil(
     // Here we call our cache "myonsenuipwa", but you can name it anything unique
-    caches.open('myonsenuipwa').then(cache => {
+    caches.open(cacheId).then(cache => {
       // If the request for any of these resources fails, _none_ of the resources will be
       // added to the cache.
       return cache.addAll([
-	    '.',
+	'.',
+        'index.html',
         'manifest.json',
         'https://cdnjs.cloudflare.com/ajax/libs/onsen/2.11.2/css/onsenui.min.css',
         'https://cdnjs.cloudflare.com/ajax/libs/onsen/2.11.2/css/onsen-css-components.min.css',
@@ -38,8 +40,16 @@ self.addEventListener('install', function(e) {
 self.addEventListener('fetch', function(e) {
   e.respondWith(
     // check if this file exists in the cache
-    caches.match(e.request)
+    caches.open(cacheId).then(cache=>{
+    return cache.match(e.request)
       // Return the cached file, or else try to get it from the server
-      .then(response => response || fetch(e.request))
+      .then(response => {
+          if(response) return response;
+          return fetch(e.request).then(response => {
+             cache.put(e.request, response.clone());
+             return response;
+          });
+      });
+   })
   );
 });
